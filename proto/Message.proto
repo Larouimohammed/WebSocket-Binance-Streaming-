@@ -1,0 +1,20 @@
+// file: invoicer.proto
+syntax = "proto3";
+option go_package = "proto/Message";
+
+
+
+message Msg {
+  string from = 1;
+  
+
+}
+
+message Resp {
+ string resp = 1;
+}
+
+service Send {
+  
+  rpc Sendmsg (Msg) returns (Resp) {}
+}
