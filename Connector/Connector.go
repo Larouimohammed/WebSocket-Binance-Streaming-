@@ -1,7 +1,6 @@
 package connector
 
 import (
-	"encoding/json"
 	"fmt"
 	"hh/binance"
 	"sync"
@@ -13,9 +12,8 @@ func Connector(wg *sync.WaitGroup) {
 	go func() {
 		for {
 			x := <-binance.Oput
-			out, _ := json.Marshal(&x)
-			fmt.Println(string(out))
-		
+			fmt.Println(x)
+
 			defer wg.Done()
 		}
 	}()

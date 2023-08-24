@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"encoding/json"
 	"hh/binance"
 	Message "hh/proto"
@@ -24,10 +23,17 @@ func New() *Server {
 		logger: logrus.WithField("logger", GRPC_SERVER)}
 }
 
-func (p *Server) Sendmsg(ctx context.Context, Msg *Message.Msg) (*Message.Resp, error) {
-	    x := <-binance.Oput
-	    out, _ := json.Marshal(&x)
-        return &Message.Resp{Resp: string(out)}, nil
+func (s *Server) Sendmsg(Msg *Message.Msg, stream Message.Send_SendmsgServer) error {
+	for {
+		x := <-binance.Oput
+		out, _ := json.Marshal(&x)
+		if err := stream.Send(&Message.Resp{Resp: string(out)}); err != nil {
+			return err
+		}
+
+		
+	}
+
 }
 
 func (p *Server) Run() error {
@@ -37,15 +43,17 @@ func (p *Server) Run() error {
 		p.logger.Errorf("failed to listen: %v", err)
 		return err
 	}
-	s := grpc.NewServer()
-	Message.RegisterSendServer(s, p)
+	var opts []grpc.ServerOption
+	grpcServer := grpc.NewServer(opts...)
+	//s := grpc.NewServer()
+	Message.RegisterSendServer(grpcServer, p)
 	p.logger.Infof("server listening at %v", lis.Addr())
 	p.logger.Infof("Starting striming to khabchi ")
-	
-	if err := s.Serve(lis); err != nil {
+
+	if err := grpcServer.Serve(lis); err != nil {
 		p.logger.Errorf("failed to serve: %v", err)
 		return err
 	}
-	
+
 	return nil
 }

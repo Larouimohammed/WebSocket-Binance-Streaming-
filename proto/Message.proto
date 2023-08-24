@@ -16,5 +16,5 @@ message Resp {
 
 service Send {
   
-  rpc Sendmsg (Msg) returns (Resp) {}
+   rpc Sendmsg (Msg) returns  (stream Resp) {}
 }

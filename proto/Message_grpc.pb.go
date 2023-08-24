@@ -28,7 +28,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SendClient interface {
-	Sendmsg(ctx context.Context, in *Msg, opts ...grpc.CallOption) (*Resp, error)
+	Sendmsg(ctx context.Context, in *Msg, opts ...grpc.CallOption) (Send_SendmsgClient, error)
 }
 
 type sendClient struct {
@@ -39,20 +39,43 @@ func NewSendClient(cc grpc.ClientConnInterface) SendClient {
 	return &sendClient{cc}
 }
 
-func (c *sendClient) Sendmsg(ctx context.Context, in *Msg, opts ...grpc.CallOption) (*Resp, error) {
-	out := new(Resp)
-	err := c.cc.Invoke(ctx, Send_Sendmsg_FullMethodName, in, out, opts...)
+func (c *sendClient) Sendmsg(ctx context.Context, in *Msg, opts ...grpc.CallOption) (Send_SendmsgClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Send_ServiceDesc.Streams[0], Send_Sendmsg_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &sendSendmsgClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Send_SendmsgClient interface {
+	Recv() (*Resp, error)
+	grpc.ClientStream
+}
+
+type sendSendmsgClient struct {
+	grpc.ClientStream
+}
+
+func (x *sendSendmsgClient) Recv() (*Resp, error) {
+	m := new(Resp)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 // SendServer is the server API for Send service.
 // All implementations must embed UnimplementedSendServer
 // for forward compatibility
 type SendServer interface {
-	Sendmsg(context.Context, *Msg) (*Resp, error)
+	Sendmsg(*Msg, Send_SendmsgServer) error
 	mustEmbedUnimplementedSendServer()
 }
 
@@ -60,8 +83,8 @@ type SendServer interface {
 type UnimplementedSendServer struct {
 }
 
-func (UnimplementedSendServer) Sendmsg(context.Context, *Msg) (*Resp, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Sendmsg not implemented")
+func (UnimplementedSendServer) Sendmsg(*Msg, Send_SendmsgServer) error {
+	return status.Errorf(codes.Unimplemented, "method Sendmsg not implemented")
 }
 func (UnimplementedSendServer) mustEmbedUnimplementedSendServer() {}
 
@@ -76,22 +99,25 @@ func RegisterSendServer(s grpc.ServiceRegistrar, srv SendServer) {
 	s.RegisterService(&Send_ServiceDesc, srv)
 }
 
-func _Send_Sendmsg_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Msg)
-	if err := dec(in); err != nil {
-		return nil, err
+func _Send_Sendmsg_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(Msg)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
 	}
-	if interceptor == nil {
-		return srv.(SendServer).Sendmsg(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Send_Sendmsg_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SendServer).Sendmsg(ctx, req.(*Msg))
-	}
-	return interceptor(ctx, in, info, handler)
+	return srv.(SendServer).Sendmsg(m, &sendSendmsgServer{stream})
+}
+
+type Send_SendmsgServer interface {
+	Send(*Resp) error
+	grpc.ServerStream
+}
+
+type sendSendmsgServer struct {
+	grpc.ServerStream
+}
+
+func (x *sendSendmsgServer) Send(m *Resp) error {
+	return x.ServerStream.SendMsg(m)
 }
 
 // Send_ServiceDesc is the grpc.ServiceDesc for Send service.
@@ -100,12 +126,13 @@ func _Send_Sendmsg_Handler(srv interface{}, ctx context.Context, dec func(interf
 var Send_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "Send",
 	HandlerType: (*SendServer)(nil),
-	Methods: []grpc.MethodDesc{
+	Methods:     []grpc.MethodDesc{},
+	Streams: []grpc.StreamDesc{
 		{
-			MethodName: "Sendmsg",
-			Handler:    _Send_Sendmsg_Handler,
+			StreamName:    "Sendmsg",
+			Handler:       _Send_Sendmsg_Handler,
+			ServerStreams: true,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
 	Metadata: "proto/Message.proto",
 }

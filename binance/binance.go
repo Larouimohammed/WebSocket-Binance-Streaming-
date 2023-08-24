@@ -59,11 +59,11 @@ func Bstream(wg *sync.WaitGroup) {
 			input <- trade // 5️⃣
 
 			x := <-input
-		    Oput <- x
-			defer wg.Done()	
+			Oput <- x
+			defer wg.Done()
 		}
-		
+		defer close(Oput)
 		defer close(input)
 	}()
-wg.Wait()
+	wg.Wait()
 }

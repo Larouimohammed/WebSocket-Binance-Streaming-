@@ -1,0 +1,10 @@
+
+# comment
+/binance/
+/cmd/
+/connector/
+/server/
+
+
+.git
+.dockerignore
