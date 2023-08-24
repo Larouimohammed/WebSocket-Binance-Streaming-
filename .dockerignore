@@ -1,10 +1,6 @@
-
-# comment
-/binance/
-/cmd/
-/connector/
-/server/
-
-
+cmd/
+Connector/
+binance/
+server/
 .git
 .dockerignore

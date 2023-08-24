@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bncsever
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bncserver
+  template:
+    metadata:
+      labels:
+        app: bncserver
+    spec:
+      containers:
+        - name: containerbncserver
+          image: khero1234/binance-streaming:this
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi

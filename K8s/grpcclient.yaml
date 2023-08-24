@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grpcclient
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: grpcclient
+  template:
+    metadata:
+      labels:
+        app: grpcclient
+    spec:
+      containers:
+        - name: containergrpcclient
+          image: khero1234/binance-client:this
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi
+          env:
+            - name: SERVICE_HOST
+              value: server-service
+            - name: SERVICE_PORT
+              value: "3333"
+
+        
